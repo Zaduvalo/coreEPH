@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from enum import IntEnum
 import logging
 from typing import Any
 
 from pyephember2.pyephember2 import (
     EphEmber,
     ZoneMode,
+    boiler_state,
     zone_current_temperature,
     zone_is_active,
     zone_is_boost_active,
@@ -54,6 +56,13 @@ EPH_TO_HA_STATE = {
     "OFF": HVACMode.OFF,
 }
 
+class EPHBoilerStates(IntEnum):
+    """Boiler states for a zone given by the api."""
+
+    FIXME = 0
+    OFF = 1
+    ON = 2
+
 HA_STATE_TO_EPH = {value: key for key, value in EPH_TO_HA_STATE.items()}
 
 
@@ -94,6 +103,7 @@ class EphEmberThermostat(ClimateEntity):
         self._ember = ember
         self._zone_name = zone_name(zone)
         self._zone = zone
+        self._attr_unique_id = zone["zoneid"]
 
         # hot water = true, is immersive device without target temperature control.
         self._hot_water = zone_is_hotwater(zone)
@@ -101,7 +111,6 @@ class EphEmberThermostat(ClimateEntity):
         self._attr_name = self._zone_name
 
         if self._hot_water:
-            self._attr_supported_features = ClimateEntityFeature.AUX_HEAT
             self._attr_target_temperature_step = None
         else:
             self._attr_target_temperature_step = 0.5
